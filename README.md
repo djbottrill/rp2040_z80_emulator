@@ -1,5 +1,11 @@
 Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
 
+Update 24/9/21
+
+Removed the serial buffering task running on the second core as it was not helping performance, this should now enable the code to run on virtually any Arduino compatible core providing there is enough flash program storage and RAM. 
+
+*************************
+
 This is based on my ESP32 Z80 emulator https://github.com/djbottrill/ESP32-Z80-Emulator but simplified to remove the SD card and simply boot into Nascom Basic rather than running CP/M
 The ESP32 version could be easilly adapted to run on the RP2040.
 
