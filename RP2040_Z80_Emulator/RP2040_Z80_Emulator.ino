@@ -1,10 +1,10 @@
 /*    RP2040 Z80 Emulator with Nascom Basic
- *    David J Bottrill September 2021
- *    
- *    Use the RP2040 core from:
- *    https://github.com/earlephilhower/arduino-pico
- * 
- */
+      David J Bottrill September 2021
+
+      Use the RP2040 core from:
+      https://github.com/earlephilhower/arduino-pico
+
+*/
 
 
 #include "init8250.h"
@@ -89,7 +89,7 @@ uint8_t JR;                     //Signed relative jump
 uint8_t V8;                     //8 Bit operand temp storge
 uint16_t V16;                   //16 Bit operand temp storge
 uint16_t V16a;                  //16 Bit operand temp storge
-uint32_t V32;                   //32 Bit operand temp storage used for 16 bit addition and subration
+uint32_t V32;                   //32 Bit operand temp storage used for 16 bit addition and subtraction
 uint8_t v1;                     //Temporary storage
 uint8_t v2;                     //Temporary storage
 bool cfs;                       //Temp carry flag storage
@@ -98,12 +98,6 @@ bool dled;                      //Disk activity flag
 uint8_t RAM[65536] = {};        //RAM
 uint8_t pOut[256];              //Output port buffer
 uint8_t pIn[256];               //Input port buffer
-uint8_t rxBuf[4096];            //Serial receive buffer
-uint16_t rxInPtr;               //Serial receive buffer input pointer
-uint16_t rxOutPtr;              //Serial receive buffer output pointer
-uint8_t txBuf[1024];            //Serial transmit buffer
-uint16_t txInPtr;               //Serial transmit buffer input pointer
-uint16_t txOutPtr;              //Serial transmit buffer output pointer
 
 //Function prototypes
 bool cpu(bool);
@@ -369,9 +363,7 @@ void portOut(uint8_t p, uint8_t v) {
       if (bitRead(v, 7) == 1) pinMode(PB7, OUTPUT); else pinMode(PB7, INPUT_PULLUP);
       break;
     case UART_PORT:                           //UART Write
-      txBuf[txInPtr] = v;                     //Write char to output buffer
-      txInPtr++;
-      if (txInPtr == 1024) txInPtr = 0;
+      Serial.write(v);
       bitWrite(pIn[UART_LSR], 6, 1);          //Set bit to indicate sent
       break;
 
@@ -402,35 +394,6 @@ void portOut(uint8_t p, uint8_t v) {
   }
 }
 
-void setup1() {
-
-}
-
-
-//*********************************************************************************************
-//****                      Serial input and output buffer task                            ****
-//*********************************************************************************************
-
-void loop1() {
-  //Check for chars to be sent
-  while (txOutPtr != txInPtr) {           //Have we received any chars?
-    Serial.write(txBuf[txOutPtr]);        //Send char to console
-    delay(1);
-    txOutPtr++;                           //Inc Output buffer pointer
-    if (txOutPtr == 1024) txOutPtr = 0;
-  }
-  delay(1);
-  // Check for Received chars
-  int c = Serial.read();
-  if (c >= 0) {
-    rxBuf[rxInPtr] = c;
-    rxInPtr++;
-    //if (rxInPtr == 1024) rxInPtr = 0;
-    if (rxInPtr == sizeof(rxBuf)) rxInPtr = 0;
-  }
-  delay(1);
-
-}
 
 //*********************************************************************************************
 //****                             Z80 input port handler                                  ****
@@ -463,9 +426,8 @@ uint8_t portIn(uint8_t p) {
       break;
 
     case UART_LSR:    //Check for received char
-      if (rxOutPtr != rxInPtr) {              //Have we received any chars?
-        pIn[UART_PORT] = rxBuf[rxOutPtr];     //Put char in UART port
-        rxOutPtr++;                          //Inc Output buffer pointer
+      if (Serial.available() > 0) {
+        pIn[UART_PORT] = Serial.read();       // read the incoming byte:
         bitWrite(pIn[UART_LSR], 0, 1);       //Set bit to say char can be read
       }
       break;
