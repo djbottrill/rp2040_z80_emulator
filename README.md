@@ -1,5 +1,18 @@
 Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
 
+
+Update 18/04/2022
+
+The CPU emulator function now runs soley on core 1 with all support functions running on core 0. The single Step / breakpoint capability has been streamlined and serial buffering has been re-instaed to improve reliability when pasting basic programs through the serial terminal.
+
+To enable Single Step and or breakpoint capability reset the RP2040 while pressing button A,
+
+Support has beed added for the Pimoroni Pico Explorer expansion board which now displays a representation of the Program Counter, Instructon byte and status of the two 8 bit virtual I/O ports on the 240x240 pixel LCD display.
+
+Note the RP2040 waits for the serial port to connect before booting the emulator.
+
+*************************
+
 Update 24/9/21
 
 Removed the serial buffering task running on the second core as it was not helping performance, this should now enable the code to run on virtually any Arduino compatible core providing there is enough flash program storage and RAM. 
