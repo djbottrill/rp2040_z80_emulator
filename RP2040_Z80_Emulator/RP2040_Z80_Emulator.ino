@@ -4,7 +4,7 @@
       Use the RP2040 core from:
       https://github.com/earlephilhower/arduino-pico
 
-      Optional support for the Pimoroni Pico Explorer expansion board with 240x240 LCD display
+      Optional support for the Pimoroni Pico Explorer expansion board with 240x240 LCD display 
 
 
 */
