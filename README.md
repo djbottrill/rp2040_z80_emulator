@@ -1,5 +1,14 @@
 Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
 
+V2.2 13/04/23
+
+There are a lot of changes in this version, if an SD card is found the board will now attempt to boot CP/M 2.2 as per the ESP32 version of the emulator.
+If a Raspberry Pi Pico W is detected during compilation as per the ESP32 version WiFi and a Telnet server will be enabled.
+
+I've temporarilly dropped support for LCD status displays pending a more flexible approach and in any case it was merely used to show status information and not console output.
+
+
+*************************
 
 Update 18/04/2022
 
