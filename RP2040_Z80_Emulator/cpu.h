@@ -23,7 +23,7 @@ void setup1() {
 //****                        Z80 process instruction emulator                             ****
 //*********************************************************************************************
 void loop1() {
-  
+  delay(100);
   while (RUN == true) {
   
     OC = RAM[PC];  //Get Opcode
@@ -1534,6 +1534,8 @@ void loop1() {
     if (bpOn == true && PC == BP) RUN = false;
   }
 }
+//*********************************************************************************************
+
 
 void CPU_ED(void) {
   uint8_t V8a = get8();
@@ -2134,74 +2136,40 @@ void calcP(uint8_t v) {  //Calc Parity and set flag
 //****                             Z80 output port handler                                 ****
 //*********************************************************************************************
 void portOut(uint8_t p, uint8_t v) {
-  pOut[p] = v;  //Save a copy of byte sent to IO Port
+  int i;  
+  pOut[p] = v;                     //Save a copy of byte sent to IO Port
   switch (p) {
-    case GPP:        //Write to PIO Port
-      pIn[GPP] = v;  //Copy to read buffer so it can be read.
-                     
-      digitalWrite(PortA0, bitRead(v, 0));
-      digitalWrite(PortA1, bitRead(v, 1));
-      digitalWrite(PortA2, bitRead(v, 2));
-      digitalWrite(PortA3, bitRead(v, 3));
-      digitalWrite(PortA4, bitRead(v, 4));
-      digitalWrite(PortA5, bitRead(v, 5));
-      digitalWrite(PortA6, bitRead(v, 6));
-      digitalWrite(PortA7, bitRead(v, 7));
-
-
+    case GPP:                                 //Write to GPIO Port
+      pIn[GPP] = v;                           //Copy to read buffer so it can be read.     
+      for(i = 0; i<8; i++){
+        if(PortA[i] > -1) digitalWrite(PortA[i], bitRead(v, i));        
+      }
       break;
-    case GPP + 1:        //PIO Direction Port
-      pIn[GPP + 1] = v;  //Copy to read buffer so it can be read.
+    case GPP+1:                               //GPIO Direction Port
+      pIn[GPP + 1] = v;                       //Copy to read buffer so it can be read.
+      for(i = 0; i<8; i++){
+        if(PortA[i] > -1) {
+          if (bitRead(v, 0) == 1) pinMode(PortA[i], OUTPUT); else pinMode(PortA[i], INPUT_PULLUP);
+        }       
+      }
       
-      if (bitRead(v, 0) == 1) pinMode(PortA0, OUTPUT);
-      else
-        pinMode(PortA0, INPUT_PULLUP);
-      if (bitRead(v, 1) == 1) pinMode(PortA1, OUTPUT);
-      else
-        pinMode(PortA1, INPUT_PULLUP);
-      if (bitRead(v, 2) == 1) pinMode(PortA2, OUTPUT);
-      else
-        pinMode(PortA2, INPUT_PULLUP);
-      if (bitRead(v, 3) == 1) pinMode(PortA3, OUTPUT);
-      else
-        pinMode(PortA3, INPUT_PULLUP);
-      if (bitRead(v, 4) == 1) pinMode(PortA4, OUTPUT);
-      else
-        pinMode(PortA4, INPUT_PULLUP);
-      if (bitRead(v, 5) == 1) pinMode(PortA5, OUTPUT);
-      else
-        pinMode(PortA5, INPUT_PULLUP);
-      if (bitRead(v, 6) == 1) pinMode(PortA6, OUTPUT);
-      else
-        pinMode(PortA6, INPUT_PULLUP);
-      if (bitRead(v, 7) == 1) pinMode(PortA7, OUTPUT);
-      else
-        pinMode(PortA7, INPUT_PULLUP);
-
       break;
-    case GPP + 2:
-      pIn[GPP + 2] = v;  //Copy to read buffer so it can be read.
-      digitalWrite(PortB0, bitRead(v, 0));
-      digitalWrite(PortB1, bitRead(v, 1));
-      digitalWrite(PortB2, bitRead(v, 2));
-      digitalWrite(PortB3, bitRead(v, 3));
-      digitalWrite(PortB4, bitRead(v, 4));
-      digitalWrite(PortB5, bitRead(v, 5));
-      digitalWrite(PortB6, bitRead(v, 6));
-      digitalWrite(PortB7, bitRead(v, 7));
+    case GPP+2:
+      pIn[GPP + 2] = v;                       //Copy to read buffer so it can be read.
+      for(i = 0; i<8; i++){
+        if(PortB[i] > -1) digitalWrite(PortB[i], bitRead(v, i));        
+      }      
       break;
-    case GPP + 3:        //GPP Direction Port
-      pIn[GPP + 3] = v;  //Copy to read buffer so it can be read.
-      if (bitRead(v, 0) == 1) pinMode(PortB0, OUTPUT); else pinMode(PortB0, INPUT_PULLUP);
-      if (bitRead(v, 1) == 1) pinMode(PortB1, OUTPUT); else pinMode(PortB1, INPUT_PULLUP);
-      if (bitRead(v, 2) == 1) pinMode(PortB2, OUTPUT); else pinMode(PortB2, INPUT_PULLUP);
-      if (bitRead(v, 3) == 1) pinMode(PortB3, OUTPUT); else pinMode(PortB3, INPUT_PULLUP);
-      if (bitRead(v, 4) == 1) pinMode(PortB4, OUTPUT); else pinMode(PortB4, INPUT_PULLUP);
-      if (bitRead(v, 5) == 1) pinMode(PortB5, OUTPUT); else pinMode(PortB5, INPUT_PULLUP);
-      if (bitRead(v, 6) == 1) pinMode(PortB6, OUTPUT); else pinMode(PortB6, INPUT_PULLUP);
-      if (bitRead(v, 7) == 1) pinMode(PortB7, OUTPUT); else pinMode(PortB7, INPUT_PULLUP);
+    case GPP+3:                               //GPP Direction Port
+      pIn[GPP + 3] = v;                       //Copy to read buffer so it can be read.
+           
+      for(i = 0; i<8; i++){
+        if(PortB[i] > -1) {
+          if (bitRead(v, 0) == 1) pinMode(PortB[i], OUTPUT); else pinMode(PortB[i], INPUT_PULLUP);
+        }       
+      }
       break;
-    case UART_PORT:  //UART Write
+    case UART_PORT:                           //UART Write
       txBuf[txInPtr] = v;                     //Write char to output buffer
       txInPtr++;
       if (txInPtr == sizeof(txBuf)) txInPtr = 0;
@@ -2209,52 +2177,28 @@ void portOut(uint8_t p, uint8_t v) {
       break;
 
     case DCMD:
-
       pIn[p] = v;
       if (sdfound == true) {
         switch (v) {
-          case 1:
-            diskRead();
-            pIn[DCMD] = 0;
-            break;
-          case 2:
-            diskWrite();
-            pIn[DCMD] = 0;
-            break;
-          case 4:
-            SDfileOpen();
-            pIn[DCMD] = 0;
-            break;
-          case 5:
-            SDfileRead();
-            pIn[DCMD] = 0;
-            break;
-          case 6:
-            SDprintDir();
-            pIn[DCMD] = 0;
-            break;
-          case 7:
-            SDsetPath();
-            pIn[DCMD] = 0;
-            break;
-          case 8:
-            bootstrap();
-            PC = 0;
-            pIn[DCMD] = 0;
-            break;  //Force reload of boot images and reboot
+          case 1: diskRead();         pIn[DCMD] = 0; break;
+          case 2: diskWrite();        pIn[DCMD] = 0; break;
+          case 4: SDfileOpen();       pIn[DCMD] = 0; break;
+          case 5: SDfileRead();       pIn[DCMD] = 0; break;
+          case 6: SDprintDir();       pIn[DCMD] = 0; break;
+          case 7: SDsetPath();        pIn[DCMD] = 0; break;
+          case 8: bootstrap();  PC = 0; pIn[DCMD] = 0; break;   //Force reload of boot images and reboot
           default: Serial.printf("Unknown Disk Command: 0x%.2X\n\r", v); break;
         }
       }
       break;
-
-    case DPARM: break;
-    case DPARM + 1: break;
-    case DPARM + 2: break;
-    case DPARM + 3: break;
-    case DPARM + 4: break;
-    case DPARM + 5: break;
-    default:  //Just print data
-      Serial.printf("Port Out: %.2X  Val: %.2X PC: %.4X\n\r", p, v, PC);
+    case DPARM:   break;
+    case DPARM+1: break;
+    case DPARM+2: break;
+    case DPARM+3: break;
+    case DPARM+4: break;
+    case DPARM+5: break;
+    default:                                    //Just print data
+      //Serial.printf("Port Out: %.2X  Val: %.2X PC: %.4X\n\r", p, v, PC);
       break;
   }
 }
@@ -2264,43 +2208,30 @@ void portOut(uint8_t p, uint8_t v) {
 //****                             Z80 input port handler                                  ****
 //*********************************************************************************************
 uint8_t portIn(uint8_t p) {
+  int i;
   switch (p) {
-    case GPP:  //Read PIO port if Direction bit is 0 (Input)
-    /*
-      if (bitRead(pOut[GPP + 1], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortA0));
-      if (bitRead(pOut[GPP + 1], 1) == 0) bitWrite(pIn[GPP], 1, digitalRead(PortA1));
-      if (bitRead(pOut[GPP + 1], 2) == 0) bitWrite(pIn[GPP], 2, digitalRead(PortA2));
-      if (bitRead(pOut[GPP + 1], 3) == 0) bitWrite(pIn[GPP], 3, digitalRead(PortA3));
-      if (bitRead(pOut[GPP + 1], 4) == 0) bitWrite(pIn[GPP], 4, digitalRead(PortA4));
-      if (bitRead(pOut[GPP + 1], 5) == 0) bitWrite(pIn[GPP], 5, digitalRead(PortA5));
-      if (bitRead(pOut[GPP + 1], 6) == 0) bitWrite(pIn[GPP], 6, digitalRead(PortA6));
-      if (bitRead(pOut[GPP + 1], 7) == 0) bitWrite(pIn[GPP], 7, digitalRead(PortA7));
-*/      
+    case GPP:        //Read GPIO port if Direction be is 0 (Input)     
+      for(i = 0; i <8; i++){
+        if (PortA[i] > -1 && bitRead(pOut[GPP + 1], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortA[i]));        
+      }
       break;
-    case GPP + 2:  //Read PIO port if Direction bit is 0 (Input)
-      //if (bitRead(pOut[GPP + 3], 0) == 0) bitWrite(pIn[GPP + 2], 0, digitalRead(PortB0));
-      //if (bitRead(pOut[GPP + 3], 1) == 0) bitWrite(pIn[GPP + 2], 1, digitalRead(PortB1));
-      //if (bitRead(pOut[GPP + 3], 2) == 0) bitWrite(pIn[GPP + 2], 2, digitalRead(PortB2));
-      //if (bitRead(pOut[GPP + 3], 3) == 0) bitWrite(pIn[GPP + 2], 3, digitalRead(PortB3));
-      //if (bitRead(pOut[GPP + 3], 4) == 0) bitWrite(pIn[GPP + 2], 4, digitalRead(PortB4));
-      //if (bitRead(pOut[GPP + 3], 5) == 0) bitWrite(pIn[GPP + 2], 5, digitalRead(PortB5));
-      //if (bitRead(pOut[GPP + 3], 6) == 0) bitWrite(pIn[GPP + 2], 6, digitalRead(PortB6));
-      //if (bitRead(pOut[GPP + 3], 7) == 0) bitWrite(pIn[GPP + 2], 7, digitalRead(PortB7));
+    case GPP+2:      //Read GPIO port if Direction be is 0 (Input)
+      for(i = 0; i <8; i++){
+        if (PortB[i] > -1 && bitRead(pOut[GPP + 2], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortB[i]));        
+      }
       break;
 
-    case UART_PORT:                   //Read virtual 8250 UART LSR
+    case UART_PORT:   //Read virtual 8250 UART LSR
       bitWrite(pIn[UART_LSR], 0, 0);  //clear bit to say char has been read
       break;
 
-    case UART_LSR:                         //Check for received char
-      if (rxOutPtr != rxInPtr) {           //Have we received any chars?
-        pIn[UART_PORT] = rxBuf[rxOutPtr];  //Put char in UART port
-        rxOutPtr++;                        //Inc Output buffer pointer
-        if (rxOutPtr == 1024) rxOutPtr = 0;
-        bitWrite(pIn[UART_LSR], 0, 1);  //Set bit to say char can be read
+    case UART_LSR:    //Check for received char
+      if (rxOutPtr != rxInPtr) {              //Have we received any chars?
+        pIn[UART_PORT] = rxBuf[rxOutPtr];     //Put char in UART port
+        rxOutPtr++;                          //Inc Output buffer pointer
+        if (rxOutPtr == sizeof(rxBuf)) rxOutPtr = 0;        
+        bitWrite(pIn[UART_LSR], 0, 1);       //Set bit to say char can be read
       }
-
-
       break;
     case DCMD:
       break;
@@ -2308,7 +2239,7 @@ uint8_t portIn(uint8_t p) {
       Serial.printf("Port In: %.2X  Val: %.2X PC: %.4X\n\r", p, pIn[p], PC);
       break;
   }
-  return (pIn[p]);  //Return buffered port input
+  return (pIn[p]);                            //Return buffered port input
 }
 
 

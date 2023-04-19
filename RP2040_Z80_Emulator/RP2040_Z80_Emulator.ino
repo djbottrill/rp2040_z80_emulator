@@ -15,6 +15,10 @@
 #include "disk.h"
 #include "cpu.h"
 
+#ifdef ILI9341
+#include "ILI9341.h"
+#endif
+
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
 #include <WiFi.h>
 #include <credentials.h>  //My WiFi credentials are in a custom Library
@@ -22,36 +26,32 @@ WiFiServer server(23);
 WiFiClient serverClient;
 #endif
 
+
+
 //*********************************************************************************************
 //****                     Setup for CPU supervisor runs on core 0                         ****
 //*********************************************************************************************
 void setup() {
+
+#ifdef ILI9341 
+  setup_tft(); 
+#endif
   //BreakPoint switch input
   pinMode(swA, INPUT_PULLUP);
   //pinMode(swB, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
 
-  pinMode(PortA0, OUTPUT);
-  pinMode(PortA1, OUTPUT);
-  pinMode(PortA2, OUTPUT);
-  pinMode(PortA3, OUTPUT);
-  pinMode(PortA4, OUTPUT);
-  pinMode(PortA5, OUTPUT);
-  pinMode(PortA6, OUTPUT);
-  pinMode(PortA7, OUTPUT);
-
-  pinMode(PortB0, OUTPUT);
-  pinMode(PortB1, OUTPUT);
-  pinMode(PortB2, OUTPUT);
-  pinMode(PortB3, OUTPUT);
-  pinMode(PortB4, OUTPUT);
-  pinMode(PortB5, OUTPUT);
-  pinMode(PortB6, OUTPUT);
-  pinMode(PortB7, OUTPUT);
-  
   Serial.begin(115200);
-  while (!Serial)
-    ;
+  int ii = 20;
+  while (ii > 0) {                      //Wait for serial port to connect
+    digitalWrite(LED_BUILTIN, HIGH);   //Flash the LED until Serial connects
+    delay(125);
+    digitalWrite(LED_BUILTIN, LOW);  //Flash the LED until Serial connects;
+    delay(125);
+    if (Serial) ii = 1;                 //Bail out if serial port connects
+    ii--;
+  }
+
   delay(500);
   Serial.println();
   Serial.println();
@@ -79,11 +79,12 @@ void setup() {
 
 
   Serial.println("Initialising Virtual Disk Controller");
-  SPI.setRX(_MISO);
-  SPI.setTX(_MOSI);
-  SPI.setSCK(_SCK);
 
-  if (!SD.begin(_CS)) {
+  //SPI.setRX(MISO);
+  //SPI.setTX(MOSI);
+  //SPI.setSCK(SCK);
+
+  if (!SD.begin(SS)) {
     Serial.println("SD Card Mount Failed");
     sdfound = false;
   }
@@ -176,6 +177,9 @@ void loop() {
 
   serialIO();  //Deal with serial I/O
 
+#ifdef ILI9341 
+  update_tft(); 
+#endif
 
   //if button A is pressed during run mode then reboot
   if (BPmode == 0 && digitalRead(swA) == 0) {  //Pressing button A will force a restart
@@ -233,7 +237,7 @@ void buttonA(void) {
 //****                   Serial receive and send buffer function                           ****
 //*********************************************************************************************
 void serialIO(void) {
-
+char c;
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   if (server.hasClient()) {
     serverClient = server.available();
@@ -271,7 +275,9 @@ void serialIO(void) {
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   // Check for Received chars from Telnet
   while (serverClient.available()) {
-    rxBuf[rxInPtr] = serverClient.read();
+    c = serverClient.read();
+    if(c == 127)  c = 8;            //Translate Backspace
+    rxBuf[rxInPtr] = c;
     rxInPtr++;
     if (rxInPtr == sizeof(rxBuf)) rxInPtr = 0;
   }

@@ -1,33 +1,63 @@
 #pragma once
 
-//Define pins to use a virtual GPIO ports, -1 means not implemented
-//GPIO for Virtual GPIO Port A
-#define PortA0 0
-#define PortA1 1
-#define PortA2 2
-#define PortA3 3
-#define PortA4 -1
-#define PortA5 -1
-#define PortA6 -1
-#define PortA7 -1
+//#define ILI9341
 
-//GPIO for Virtual GPIO Port B
-#define PortB0 -1
-#define PortB1 -1
-#define PortB2 -1
-#define PortB3 -1
-#define PortB4 -1
-#define PortB5 -1
-#define PortB6 -1
-#define PortB7 -1
+//*********************************************************************************************
+//****                   3rd Party Board with ILI9341 LCD (experimental)                   ****
+//*********************************************************************************************
+#ifdef ILI9341
+#include "Adafruit_GFX.h"
+#include "Adafruit_ILI9341.h"
 
-#define swA 12  //Breakpoint / Single Step push button
-#define swB 13
+#define MISO  16
+#define SS    17
+#define SCK   18
+#define MOSI  19
 
-const int _MISO = 4;
-const int _CS   = 5;
-const int _SCK  = 6;
-const int _MOSI = 7;
+#define TFT_DC 20
+#define TFT_CS 21
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+
+//Define pins to use as virtual GPIO ports, -1 means not implemented
+int PortA[8] = {  0,  1,  2,  3,  4,  5,  6,  7};   //Virtual GPIO Port A
+int PortB[8] = {  8,  9, 10, 11, 12, 13, 14, 15};   //Virtual GPIO Port B
+
+#define swA 22  //Breakpoint / Single Step push button
+
+
+#else
+
+//*********************************************************************************************
+//****                         Raspberry Pi Pico (W) Board                                 ****
+//*********************************************************************************************
+
+//Default SPI0
+#define MISO  16
+#define SS    17
+#define SCK   18
+#define MOSI  19
+
+//Define pins to use as virtual GPIO ports, -1 means not implemented
+int PortA[8] = {  0,  1,  2,  3,  4,  5,  6,  7};   //Virtual GPIO Port A
+int PortB[8] = {  8,  9, 10, 11, 12, 13, 14, 15};   //Virtual GPIO Port B
+
+#define swA 22  //Breakpoint / Single Step push button
+
+
+#endif
+
+//Maker PI Pio board uses SPI1
+//#define MISO  12
+//#define SS    15
+//#define SCK   10
+//#define MOSI  11
+
+//Waveshare Pico-ResTouch-LCD-3.5
+//#define MISO  12
+//#define SS    22
+//#define SCK   10
+//#define MOSI  11
+
 
 
 
@@ -106,3 +136,5 @@ char sdfile[50] = {};              //SD card filename
 char sddir[50] = { "/download" };  //SD card path
 bool sdfound = true;               //SD Card present flag
 bool dled;                         //Disk activity flag
+
+
