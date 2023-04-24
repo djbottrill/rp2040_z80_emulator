@@ -1,5 +1,12 @@
 Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
 
+Update 24/04/23
+
+This version checks for an SD card on both SPI 0 and SPI 1, plus there are a few minor improvements.
+
+*************************
+
+
 V2.2 13/04/23
 
 There are a lot of changes in this version, if an SD card is found the board will now attempt to boot CP/M 2.2 as per the ESP32 version of the emulator.
