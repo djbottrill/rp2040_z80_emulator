@@ -1,11 +1,20 @@
 #pragma once
 
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
+#include <WiFi.h>
+#include <credentials.h>  //My WiFi credentials are in a custom Library
+WiFiServer server(23);
+WiFiClient serverClient;
+const char *hostName = "pico80";   //Hostname
+#endif
+
 //#define ILI9341
 
 //*********************************************************************************************
 //****                   3rd Party Board with ILI9341 LCD (experimental)                   ****
 //*********************************************************************************************
 #ifdef ILI9341
+#include "ILI9341.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 
@@ -31,34 +40,27 @@ int PortB[8] = {  8,  9, 10, 11, 12, 13, 14, 15};   //Virtual GPIO Port B
 //****                         Raspberry Pi Pico (W) Board                                 ****
 //*********************************************************************************************
 
-//Default SPI0
+//SPI 0 configuration
 #define MISO  16
 #define SS    17
 #define SCK   18
 #define MOSI  19
+//SPI 1 configuration
+#define SCK1  10
+#define MOSI1 11
+#define MISO1 12
+#define SS1   15    //Maker PI Pio board has SS on GPIO 15
+//#define SS1   22    //Waveshare Pico-ResTouch-LCD-3.5 has SS on GPIO 22
 
 //Define pins to use as virtual GPIO ports, -1 means not implemented
 int PortA[8] = {  0,  1,  2,  3,  4,  5,  6,  7};   //Virtual GPIO Port A
-int PortB[8] = {  8,  9, 10, 11, 12, 13, 14, 15};   //Virtual GPIO Port B
+//int PortB[8] = {  8,  9, 10, 11, 12, 13, 14, 15};   //Virtual GPIO Port B
+int PortB[8] = {  8,  9, -1, -1, -1, -1, -1, -1};   //Virtual GPIO Port B
 
-#define swA 22  //Breakpoint / Single Step push button
+#define swA 20  //Breakpoint / Single Step push button
 
 
 #endif
-
-//Maker PI Pio board uses SPI1
-//#define MISO  12
-//#define SS    15
-//#define SCK   10
-//#define MOSI  11
-
-//Waveshare Pico-ResTouch-LCD-3.5
-//#define MISO  12
-//#define SS    22
-//#define SCK   10
-//#define MOSI  11
-
-
 
 
 //Virtual GPIO Port
@@ -134,7 +136,7 @@ uint16_t txOutPtr;        //Serial transmit buffer output pointer
 int vdrive;                        //Virtual drive number
 char sdfile[50] = {};              //SD card filename
 char sddir[50] = { "/download" };  //SD card path
-bool sdfound = true;               //SD Card present flag
+bool sdfound = false;              //SD Card present flag
 bool dled;                         //Disk activity flag
 
 

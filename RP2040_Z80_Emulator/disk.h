@@ -14,16 +14,18 @@ void FileToRAM(char* , uint16_t);
 //****                       Load bootstrap binaries from flash                            ****
 //*********************************************************************************************
 void loadBasic(void) {
-Serial.println("Booting from flash");  
   int i;
-  Serial.println("\n\rLoading BIOS");
+  Serial.println("\n\rBooting from flash:");
+  Serial.printf("Loading: BIOS  at 0x%04x ", 0);
   for (i = 0; i < sizeof(init8250); i++) {
     RAM[i] = init8250[i];
   }
-  Serial.println("Loading BASIC");
+  Serial.printf("%5d bytes... Done\n\r", sizeof(init8250));
+  Serial.printf("Loading: Basic at 0x%04x ", 0x150);
   for (i = 0; i < sizeof(basic); i++) {
     RAM[i + 0x150] = basic[i];
   }
+  Serial.printf("%5d bytes... Done\n\r", sizeof(basic));
 }
 
 //*********************************************************************************************

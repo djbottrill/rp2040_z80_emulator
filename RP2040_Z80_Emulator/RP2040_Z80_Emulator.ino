@@ -15,26 +15,14 @@
 #include "disk.h"
 #include "cpu.h"
 
-#ifdef ILI9341
-#include "ILI9341.h"
-#endif
-
-#ifdef ARDUINO_RASPBERRY_PI_PICO_W
-#include <WiFi.h>
-#include <credentials.h>  //My WiFi credentials are in a custom Library
-WiFiServer server(23);
-WiFiClient serverClient;
-#endif
-
-
 
 //*********************************************************************************************
 //****                     Setup for CPU supervisor runs on core 0                         ****
 //*********************************************************************************************
 void setup() {
 
-#ifdef ILI9341 
-  setup_tft(); 
+#ifdef ILI9341
+  setup_tft();
 #endif
   //BreakPoint switch input
   pinMode(swA, INPUT_PULLUP);
@@ -43,12 +31,12 @@ void setup() {
 
   Serial.begin(115200);
   int ii = 20;
-  while (ii > 0) {                      //Wait for serial port to connect
-    digitalWrite(LED_BUILTIN, HIGH);   //Flash the LED until Serial connects
+  while (ii > 0) {                    //Wait for serial port to connect
+    digitalWrite(LED_BUILTIN, HIGH);  //Flash the LED until Serial connects
     delay(125);
     digitalWrite(LED_BUILTIN, LOW);  //Flash the LED until Serial connects;
     delay(125);
-    if (Serial) ii = 1;                 //Bail out if serial port connects
+    if (Serial) ii = 1;  //Bail out if serial port connects
     ii--;
   }
 
@@ -66,6 +54,24 @@ void setup() {
   Serial.println();
 
 
+  Serial.println("Initialising Virtual Disk Controller");
+
+  SPI.setRX(MISO);
+  SPI.setTX(MOSI);
+  SPI.setSCK(SCK);
+  SPI1.setRX(MISO1);
+  SPI1.setTX(MOSI1);
+  SPI1.setSCK(SCK1);
+  
+//try both SPI busses in order to try and find an SD card.
+  if (SD.begin(SS) || SD.begin(SS1, SPI1)){
+    Serial.println("SD Card Mount Success");
+    sdfound = true;
+  } else {
+    Serial.println("SD Card Mount Failed");
+    sdfound = false;
+  }
+
   //Initialise virtual PIO ports
   Serial.println("Initialising Z80 Virtual PIO Ports");
   portOut(GPP, 0);        //Port 0 GPIO A 0 - 7 off
@@ -77,37 +83,26 @@ void setup() {
   Serial.println("Initialising Z80 Virtual 6850 UART");
   pIn[UART_LSR] = 0x40;  //Set bit to say TX buffer is empty
 
-
-  Serial.println("Initialising Virtual Disk Controller");
-
-  //SPI.setRX(MISO);
-  //SPI.setTX(MOSI);
-  //SPI.setSCK(SCK);
-
-  if (!SD.begin(SS)) {
-    Serial.println("SD Card Mount Failed");
-    sdfound = false;
-  }
-
-
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   Serial.print("Connecting to WiFi: ");
   // Initialize the WiFi module
   WiFi.mode(WIFI_STA);
+  WiFi.setHostname(hostName);
   WiFi.begin(ssid, password);
   // Wait for the WiFi connection to be established
-  while (WiFi.status() != WL_CONNECTED){
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));   //Flash LED quickly while waiting for WiFi to connect
+  while (WiFi.status() != WL_CONNECTED) {
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));  //Flash LED quickly while waiting for WiFi to connect
     delay(50);
   }
   Serial.println("Done!");
   Serial.println("Telnet Service Started");
+  server.begin();
   Serial.print("Use 'telnet ");
   Serial.print(WiFi.localIP());
-  Serial.println("' to connect"); 
-
-  server.begin();
+  Serial.println("' to connect");
 #endif
+
+  bootstrap();  //Load boot images from SD Card or Flash
 
   //Depending if swA is pressed run in breakpoint - prompt for settings
   if (digitalRead(swA) == 0) {
@@ -136,6 +131,8 @@ void setup() {
     buttonA();
   }
 
+
+
   switch (BPmode) {
     case 0:
       Serial.println("\n\rStarting Z80\n\r");
@@ -163,9 +160,9 @@ void setup() {
       SingleStep = false;
       break;
   }
-      bootstrap();  //Load boot images from SD Card or Flash
-      PC = 0;       //Set program counter
-      RUN = true;    
+  
+  PC = 0;       //Set program counter
+  RUN = true;
 }
 
 
@@ -177,16 +174,24 @@ void loop() {
 
   serialIO();  //Deal with serial I/O
 
-#ifdef ILI9341 
-  update_tft(); 
+#ifdef ILI9341
+  update_tft();
 #endif
 
   //if button A is pressed during run mode then reboot
   if (BPmode == 0 && digitalRead(swA) == 0) {  //Pressing button A will force a restart
     RUN = false;
-    while (digitalRead(swA) == 0) ;
-    bootstrap();  //reload boot images from SD Card or Flash
-    PC = 0;       //Set program counter
+    Serial.printf("\n\r\nCPU Halted @ %.4X ...rebooting...", PC - 1);
+    while (digitalRead(swA) == 0)
+      ;
+    portOut(GPP, 0);        //Port 0 GPIO A 0 - 7 off
+    portOut(GPP + 1, 255);  //Port 1 GPIO A 0 - 7 Outputs
+    portOut(GPP + 2, 0);    //Port 0 GPIO B 1 - 7 off
+    portOut(GPP + 3, 255);  //Port 1 GPIO B 0 - 7 Outputs
+    Serial.println();
+    bootstrap();            //reload boot images from SD Card or Flash
+    PC = 0;                 //Set program counter
+    Serial.println("\n\rStarting Z80\n\r");
     RUN = true;
   }
 
@@ -195,8 +200,12 @@ void loop() {
     switch (BPmode) {
       case 0:  //Run mode
         Serial.printf("\n\rCPU Halted @ %.4X ...rebooting...\n\r", PC - 1);
-        bootstrap();  //reload boot images from SD Card or Flash
-        PC = 0;       //Set program counter
+        bootstrap();            //reload boot images from SD Card or Flash
+        PC = 0;                 //Set program counter
+        portOut(GPP, 0);        //Port 0 GPIO A 0 - 7 off
+        portOut(GPP + 1, 255);  //Port 1 GPIO A 0 - 7 Outputs
+        portOut(GPP + 2, 0);    //Port 0 GPIO B 1 - 7 off
+        portOut(GPP + 3, 255);  //Port 1 GPIO B 0 - 7 Outputs
         break;
 
       case 1:  //Single step mode
@@ -219,7 +228,6 @@ void loop() {
     }
     RUN = true;  //Restart CPU
   }
-  
 }
 
 
@@ -237,7 +245,7 @@ void buttonA(void) {
 //****                   Serial receive and send buffer function                           ****
 //*********************************************************************************************
 void serialIO(void) {
-char c;
+  char c;
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   if (server.hasClient()) {
     serverClient = server.available();
@@ -259,8 +267,8 @@ char c;
     serverClient.write(27);   //Print "esc"
     serverClient.print("c");  //Send esc c to reset screen
 
-    while (serverClient.available()) serverClient.read(); //Get rid of any garbage received
-    RUN = false;  //Force Z80 reboot
+    while (serverClient.available()) serverClient.read();  //Get rid of any garbage received
+    RUN = false;                                           //Force Z80 reboot
   }
 #endif
 
@@ -276,21 +284,29 @@ char c;
   // Check for Received chars from Telnet
   while (serverClient.available()) {
     c = serverClient.read();
-    if(c == 127)  c = 8;            //Translate Backspace
+    if (c == 127) c = 8;  //Translate Backspace
     rxBuf[rxInPtr] = c;
     rxInPtr++;
     if (rxInPtr == sizeof(rxBuf)) rxInPtr = 0;
   }
 #endif
-    
+
+  // Check if the virtual UART register is empty if so and there is a char waiting then put in UART register
+  if (rxOutPtr != rxInPtr && bitRead(pIn[UART_LSR], 0) == 0) {  //Have we received any chars and the read buffer is empty?
+    pIn[UART_PORT] = rxBuf[rxOutPtr];                           //Put char in UART port
+    rxOutPtr++;                                                 //Inc Output buffer pointer
+    if (rxOutPtr == sizeof(rxBuf)) rxOutPtr = 0;
+    bitWrite(pIn[UART_LSR], 0, 1);  //Set bit to say char can be read
+  }
+
   //Check for chars to be sent
-  while (txOutPtr != txInPtr) {                                         //Have we received any chars?)
-    Serial.write(txBuf[txOutPtr]);                                      //Send char to console  
+  while (txOutPtr != txInPtr) {     //Have we received any chars?)
+    Serial.write(txBuf[txOutPtr]);  //Send char to console
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
     if (serverClient.connected()) serverClient.write(txBuf[txOutPtr]);  //Send via Telnet if client connected
 #endif
-    txOutPtr++;                                                         //Inc Output buffer pointer
-    if (txOutPtr == sizeof(txBuf)) txOutPtr = 0;                        //Wrap around circular buffer
+    txOutPtr++;                                   //Inc Output buffer pointer
+    if (txOutPtr == sizeof(txBuf)) txOutPtr = 0;  //Wrap around circular buffer
   }
 }
 

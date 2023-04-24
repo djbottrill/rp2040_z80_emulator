@@ -1,16 +1,16 @@
 #pragma once
 
 uint8_t get8(void);
-uint16_t get16(void); 
-uint8_t ADD8(uint8_t , uint8_t , bool );
-uint8_t SUB8(uint8_t , uint8_t , bool );
-void calcP(uint8_t );
+uint16_t get16(void);
+uint8_t ADD8(uint8_t, uint8_t, bool);
+uint8_t SUB8(uint8_t, uint8_t, bool);
+void calcP(uint8_t);
 void CPU_CB(void);
 void CPU_DD(void);
 void CPU_ED(void);
 void CPU_FD(void);
-void portOut(uint8_t , uint8_t );
-uint8_t portIn(uint8_t );
+void portOut(uint8_t, uint8_t);
+uint8_t portIn(uint8_t);
 
 //*********************************************************************************************
 //****                     Setup for CPU emulator, runs on core 1                          ****
@@ -23,10 +23,11 @@ void setup1() {
 //****                        Z80 process instruction emulator                             ****
 //*********************************************************************************************
 void loop1() {
-  delay(100);
+  delay(50);
   while (RUN == true) {
-  
     OC = RAM[PC];  //Get Opcode
+    //POP[OC]++;                  //OpCode popularity counters
+    //if(OC == 0xCB)POPcb[RAM[PC+1]]++;
     PC++;          //Increment Program counter
     switch (OC) {  //Switch based on OPCode
       //********************************************
@@ -42,10 +43,12 @@ void loop1() {
         RAM[(256 * B) + C] = A;
         break;
       case 0x03:  //** INC BC **
-        V16 = (256 * B) + C;
-        V16++;
-        B = V16 / 256;
-        C = V16 & 255;
+        //V16 = (256 * B) + C;
+        //V16++;
+        //B = V16 / 256;
+        //C = V16 & 255;
+        C++;
+        if (C == 0) B++;
         break;
       case 0x04:  //** INC B **
         cfs = Cf;
@@ -91,8 +94,7 @@ void loop1() {
         V32 = (H * 256) + L;
         V16 = (B * 256) + C;
         if (bitRead(V32, 11) == 1 && bitRead(V16, 11) == 1) Hf = true;
-        else
-          Hf = false;  //Half carry flag
+        else Hf = false;  //Half carry flag
         V32 += V16;
         Cf = bitRead(V32, 16);  //** Update carry flag **  *
         H = V32 >> 8 & 0xff;
@@ -152,10 +154,12 @@ void loop1() {
         RAM[(256 * D) + E] = A;
         break;
       case 0x13:  //** INC DE **
-        V16 = E + (256 * D);
-        V16++;
-        D = V16 / 256;
-        E = V16 & 255;
+        //V16 = E + (256 * D);
+        //V16++;
+        //D = V16 / 256;
+        //E = V16 & 255;
+        E++;
+        if (E == 0) D++;
         break;
       case 0x14:  //** INC D **
         cfs = Cf;
@@ -190,8 +194,7 @@ void loop1() {
         V32 = (H * 256) + L;
         V16 = (D * 256) + E;
         if (bitRead(V32, 11) == 1 && bitRead(V16, 11) == 1) Hf = true;
-        else
-          Hf = false;  //Half carry flag
+        else Hf = false;  //Half carry flag
         V32 += V16;
         Cf = bitRead(V32, 16);  //Update carry flag
         H = V32 >> 8 & 0xff;
@@ -253,10 +256,12 @@ void loop1() {
         RAM[V16 + 1] = H;
         break;
       case 0x23:  //** INC HL **
-        V16 = L + (256 * H);
-        V16++;
-        H = V16 / 256;
-        L = V16 & 255;
+        //V16 = L + (256 * H);
+        //V16++;
+        //H = V16 / 256;
+        //L = V16 & 255;
+        L++;
+        if (L == 0) H++;
         break;
       case 0x24:  //** INC H **
         cfs = Cf;
@@ -315,8 +320,7 @@ void loop1() {
         A += 0x9A;  //13
 
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         calcP(A);            //update parity flag
         Sf = bitRead(A, 7);  //Update S flag
         break;
@@ -334,8 +338,7 @@ void loop1() {
       case 0x29:  //** ADD HL, HL **
         V32 = (H * 256) + L;
         if (bitRead(V32, 11) == 1) Hf = true;
-        else
-          Hf = false;           //Half carry flag
+        else Hf = false;        //Half carry flag
         V32 = V32 << 1;         //add it again
         Cf = bitRead(V32, 16);  //** Update carry flag **  *
         H = (V32 / 256) & 0xff;
@@ -430,8 +433,7 @@ void loop1() {
       case 0x39:  //** ADD HL, SP **
         V32 = (H * 256) + L;
         if (bitRead(V32, 11) == 1 && bitRead(SP, 11) == 1) Hf = true;
-        else
-          Hf = false;  //Half carry flag
+        else Hf = false;  //Half carry flag
         V32 += SP;
         Cf = bitRead(V32, 16);  //** Update carry flag **  *
         H = (V32 / 256) & 0xff;
@@ -787,8 +789,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA1:  //** AND C **
@@ -798,8 +799,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA2:  //** AND D **
@@ -809,8 +809,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA3:  //** AND E **
@@ -820,8 +819,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA4:  //** AND H **
@@ -831,8 +829,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA5:  //** AND L **
@@ -842,8 +839,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA6:  //** AND (HL) **
@@ -853,8 +849,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA7:  //** AND A **
@@ -864,8 +859,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA8:  //** XOR B **
@@ -875,8 +869,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xA9:  //** XOR C **
@@ -886,8 +879,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xAA:  //** XOR D **
@@ -897,8 +889,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xAB:  //** XOR E **
@@ -908,8 +899,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xAC:  //** XOR H **
@@ -919,8 +909,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xAD:  //** XOR L **
@@ -930,8 +919,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xAE:  //** XOR (HL) **
@@ -941,8 +929,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xAF:  //** XOR A **
@@ -966,8 +953,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xB1:  //** OR C **
@@ -977,8 +963,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xB2:  //** OR D **
@@ -988,8 +973,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xB3:  //** OR E **
@@ -999,8 +983,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xB4:  //** OR H **
@@ -1010,8 +993,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xB5:  //** OR L **
@@ -1021,8 +1003,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0XB6:  //** OR (HL) **
@@ -1032,8 +1013,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0XB7:  //** OR A **
@@ -1043,8 +1023,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xB8:        //** CP B **
@@ -1196,7 +1175,8 @@ void loop1() {
         if (Cf == false) PC = V16;
         break;
       case 0xD3:  //** OUT PORT, A **
-        portOut(get8(), A);
+        portOut(RAM[PC], A);
+        PC++;
         break;
       case 0xD4:  //** CALL NC, value **
         V16 = get16();
@@ -1258,7 +1238,9 @@ void loop1() {
         if (Cf == true) PC = V16;
         break;
       case 0xDB:  //** IN A, PORT **
-        A = portIn(get8());
+        //A = portIn(get8());
+        A = portIn(RAM[PC]);
+        PC++;
         break;
       case 0xDC:  //** CALL C, value **
         V16 = get16();
@@ -1340,8 +1322,7 @@ void loop1() {
         calcP(A);
         Hf = true;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         ;
         Sf = bitRead(A, 7);
         break;
@@ -1397,8 +1378,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xEF:  //** RST 28 **
@@ -1468,8 +1448,7 @@ void loop1() {
         calcP(A);
         Hf = false;
         if (A == 0) Zf = true;
-        else
-          Zf = false;
+        else Zf = false;
         Sf = bitRead(A, 7);
         break;
       case 0xF7:  //** RST 30 **
@@ -1524,16 +1503,15 @@ void loop1() {
         PC = 0x38;  //Put 0x38 in Program Counter
         break;
 
-      default:  //Anything not yet emulated
+      default:  //NOP or anything not recognised
         Serial.printf("Unknown OP-Code %.2X at %.4X\n\r", OC, PC - 1);
-        RUN = false;
-        bpOn = true;
         break;
     }
     if (SingleStep == true) RUN = false;
     if (bpOn == true && PC == BP) RUN = false;
   }
 }
+
 //*********************************************************************************************
 
 
@@ -2112,10 +2090,8 @@ uint8_t get8(void) {
 //****                            Get next 16 bit operand                                  ****
 //*********************************************************************************************
 uint16_t get16(void) {
-  uint16_t V = RAM[PC];
-  PC++;
-  V += (256 * RAM[PC]);
-  PC++;
+  uint16_t V = RAM[PC] + 256 * RAM[PC + 1];
+  PC = PC + 2;
   return (V);
 }
 
@@ -2123,12 +2099,17 @@ uint16_t get16(void) {
 //****                        Calculate parity and set flag                                ****
 //*********************************************************************************************
 void calcP(uint8_t v) {  //Calc Parity and set flag
-  uint8_t i;
-  uint8_t z = 0;
-  for (i = 0; i < 8; i++) {
-    if (bitRead(v, i) == 1) z++;
+  //uint8_t i;
+  //uint8_t z = 0;
+  //for (i = 0; i < 8; i++) {
+  //  if (bitRead(v, i) == 1) z++;
+  //}
+  //Pf = !bitRead(z, 0);
+  Pf = true;
+  while (v) {
+    Pf = !Pf;
+    v = v & (v - 1);
   }
-  Pf = !bitRead(z, 0);
 }
 
 
@@ -2136,68 +2117,92 @@ void calcP(uint8_t v) {  //Calc Parity and set flag
 //****                             Z80 output port handler                                 ****
 //*********************************************************************************************
 void portOut(uint8_t p, uint8_t v) {
-  int i;  
-  pOut[p] = v;                     //Save a copy of byte sent to IO Port
+  int i;
+  pOut[p] = v;  //Save a copy of byte sent to IO Port
   switch (p) {
-    case GPP:                                 //Write to GPIO Port
-      pIn[GPP] = v;                           //Copy to read buffer so it can be read.     
-      for(i = 0; i<8; i++){
-        if(PortA[i] > -1) digitalWrite(PortA[i], bitRead(v, i));        
+    case GPP:        //Write to GPIO Port
+      pIn[GPP] = v;  //Copy to read buffer so it can be read.
+      for (i = 0; i < 8; i++) {
+        if (PortA[i] > -1) digitalWrite(PortA[i], bitRead(v, i));
       }
       break;
-    case GPP+1:                               //GPIO Direction Port
-      pIn[GPP + 1] = v;                       //Copy to read buffer so it can be read.
-      for(i = 0; i<8; i++){
-        if(PortA[i] > -1) {
-          if (bitRead(v, 0) == 1) pinMode(PortA[i], OUTPUT); else pinMode(PortA[i], INPUT_PULLUP);
-        }       
+    case GPP + 1:        //GPIO Direction Port
+      pIn[GPP + 1] = v;  //Copy to read buffer so it can be read.
+      for (i = 0; i < 8; i++) {
+        if (PortA[i] > -1) {
+          if (bitRead(v, 0) == 1) pinMode(PortA[i], OUTPUT);
+          else pinMode(PortA[i], INPUT_PULLUP);
+        }
       }
-      
+
       break;
-    case GPP+2:
-      pIn[GPP + 2] = v;                       //Copy to read buffer so it can be read.
-      for(i = 0; i<8; i++){
-        if(PortB[i] > -1) digitalWrite(PortB[i], bitRead(v, i));        
-      }      
-      break;
-    case GPP+3:                               //GPP Direction Port
-      pIn[GPP + 3] = v;                       //Copy to read buffer so it can be read.
-           
-      for(i = 0; i<8; i++){
-        if(PortB[i] > -1) {
-          if (bitRead(v, 0) == 1) pinMode(PortB[i], OUTPUT); else pinMode(PortB[i], INPUT_PULLUP);
-        }       
+    case GPP + 2:
+      pIn[GPP + 2] = v;  //Copy to read buffer so it can be read.
+      for (i = 0; i < 8; i++) {
+        if (PortB[i] > -1) digitalWrite(PortB[i], bitRead(v, i));
       }
       break;
-    case UART_PORT:                           //UART Write
-      txBuf[txInPtr] = v;                     //Write char to output buffer
+    case GPP + 3:        //GPP Direction Port
+      pIn[GPP + 3] = v;  //Copy to read buffer so it can be read.
+
+      for (i = 0; i < 8; i++) {
+        if (PortB[i] > -1) {
+          if (bitRead(v, 0) == 1) pinMode(PortB[i], OUTPUT);
+          else pinMode(PortB[i], INPUT_PULLUP);
+        }
+      }
+      break;
+    case UART_PORT:        //UART Write
+      txBuf[txInPtr] = v;  //Write char to output buffer
       txInPtr++;
       if (txInPtr == sizeof(txBuf)) txInPtr = 0;
-      bitWrite(pIn[UART_LSR], 6, 1);          //Set bit to indicate sent
+      bitWrite(pIn[UART_LSR], 6, 1);  //Set bit to indicate sent
       break;
 
     case DCMD:
       pIn[p] = v;
       if (sdfound == true) {
         switch (v) {
-          case 1: diskRead();         pIn[DCMD] = 0; break;
-          case 2: diskWrite();        pIn[DCMD] = 0; break;
-          case 4: SDfileOpen();       pIn[DCMD] = 0; break;
-          case 5: SDfileRead();       pIn[DCMD] = 0; break;
-          case 6: SDprintDir();       pIn[DCMD] = 0; break;
-          case 7: SDsetPath();        pIn[DCMD] = 0; break;
-          case 8: bootstrap();  PC = 0; pIn[DCMD] = 0; break;   //Force reload of boot images and reboot
+          case 1:
+            diskRead();
+            pIn[DCMD] = 0;
+            break;
+          case 2:
+            diskWrite();
+            pIn[DCMD] = 0;
+            break;
+          case 4:
+            SDfileOpen();
+            pIn[DCMD] = 0;
+            break;
+          case 5:
+            SDfileRead();
+            pIn[DCMD] = 0;
+            break;
+          case 6:
+            SDprintDir();
+            pIn[DCMD] = 0;
+            break;
+          case 7:
+            SDsetPath();
+            pIn[DCMD] = 0;
+            break;
+          case 8:
+            bootstrap();
+            PC = 0;
+            pIn[DCMD] = 0;
+            break;  //Force reload of boot images and reboot
           default: Serial.printf("Unknown Disk Command: 0x%.2X\n\r", v); break;
         }
       }
       break;
-    case DPARM:   break;
-    case DPARM+1: break;
-    case DPARM+2: break;
-    case DPARM+3: break;
-    case DPARM+4: break;
-    case DPARM+5: break;
-    default:                                    //Just print data
+    case DPARM: break;
+    case DPARM + 1: break;
+    case DPARM + 2: break;
+    case DPARM + 3: break;
+    case DPARM + 4: break;
+    case DPARM + 5: break;
+    default:  //Just print data
       //Serial.printf("Port Out: %.2X  Val: %.2X PC: %.4X\n\r", p, v, PC);
       break;
   }
@@ -2208,38 +2213,33 @@ void portOut(uint8_t p, uint8_t v) {
 //****                             Z80 input port handler                                  ****
 //*********************************************************************************************
 uint8_t portIn(uint8_t p) {
-  int i;
   switch (p) {
-    case GPP:        //Read GPIO port if Direction be is 0 (Input)     
-      for(i = 0; i <8; i++){
-        if (PortA[i] > -1 && bitRead(pOut[GPP + 1], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortA[i]));        
+    case GPP:  //Read GPIO port if Direction be is 0 (Input)
+      for (int i = 0; i < 8; i++) {
+        if (PortA[i] > -1 && bitRead(pOut[GPP + 1], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortA[i]));
       }
       break;
-    case GPP+2:      //Read GPIO port if Direction be is 0 (Input)
-      for(i = 0; i <8; i++){
-        if (PortB[i] > -1 && bitRead(pOut[GPP + 2], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortB[i]));        
+    case GPP + 2:  //Read GPIO port if Direction be is 0 (Input)
+      for (int i = 0; i < 8; i++) {
+        if (PortB[i] > -1 && bitRead(pOut[GPP + 2], 0) == 0) bitWrite(pIn[GPP], 0, digitalRead(PortB[i]));
       }
       break;
 
-    case UART_PORT:   //Read virtual 8250 UART LSR
+    case UART_PORT:                   //Read virtual 8250 UART LSR
       bitWrite(pIn[UART_LSR], 0, 0);  //clear bit to say char has been read
       break;
 
-    case UART_LSR:    //Check for received char
-      if (rxOutPtr != rxInPtr) {              //Have we received any chars?
-        pIn[UART_PORT] = rxBuf[rxOutPtr];     //Put char in UART port
-        rxOutPtr++;                          //Inc Output buffer pointer
-        if (rxOutPtr == sizeof(rxBuf)) rxOutPtr = 0;        
-        bitWrite(pIn[UART_LSR], 0, 1);       //Set bit to say char can be read
-      }
+    case UART_LSR:  //Check for received char
+      //Nothing to do here as this is handled by the serial task
       break;
+
     case DCMD:
       break;
     default:
       Serial.printf("Port In: %.2X  Val: %.2X PC: %.4X\n\r", p, pIn[p], PC);
       break;
   }
-  return (pIn[p]);                            //Return buffered port input
+  return (pIn[p]);  //Return buffered port input
 }
 
 
