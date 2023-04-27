@@ -46,41 +46,56 @@ void setup() {
   Serial.println();
   Serial.write(27);   //Print "esc"
   Serial.print("c");  //Send esc c to reset screen
-  Serial.println("***********************************");
-  Serial.println("****        Shady Grove        ****");
-  Serial.println("****  Z80 Emulator for RP2040  ****");
-  Serial.println("**** David Bottrill 2023  V2.2 ****");
-  Serial.println("***********************************");
+  /*
+  Serial.println(" PPPPPP   IIIIIII   CCCCCC    OOOOOO    888888    000000  ");
+  Serial.println("P      P     I     C      C  O      O  8      8  0     00 ");
+  Serial.println("P      P     I     C         O      O  8      8  0    0 0 ");
+  Serial.println("PPPPPPP      I     C         O      O   888888   0   0  0 ");
+  Serial.println("P            I     C         O      O  8      8  0  0   0 ");
+  Serial.println("P            I     C      C  O      O  8      8  0 0    0 ");
+  Serial.println("P         IIIIIII   CCCCCC    OOOOOO    888888    000000  ");
   Serial.println();
+  Serial.println("               Z80 Emulator for RP2040 V2.2 ");
+  Serial.println("      David Bottrill - Shady Grove Electronics 2023  ");
+  Serial.println();
+*/
 
+//Print the logon logo
+  for(int i = 0; i <11; i++){
+    Serial.println(logo[i]);
+  };
 
-  Serial.println("Initialising Virtual Disk Controller");
-
+  Serial.println("Initialising Virtual Disk Controller:");
   SPI.setRX(MISO);
   SPI.setTX(MOSI);
   SPI.setSCK(SCK);
   SPI1.setRX(MISO1);
   SPI1.setTX(MOSI1);
   SPI1.setSCK(SCK1);
-  
-//try both SPI busses in order to try and find an SD card.
-  if (SD.begin(SS) || SD.begin(SS1, SPI1)){
-    Serial.println("SD Card Mount Success");
+  //try both SPI busses in order to try and find an SD card.
+  sdfound = false;
+  if (SD.begin(SS)) {
+    Serial.println("SD Card Mount Success on SPI 0");
     sdfound = true;
-  } else {
-    Serial.println("SD Card Mount Failed");
-    sdfound = false;
   }
+  if (sdfound == false) {
+    if (SD.begin(SS1, SPI1)) {
+      Serial.println("SD Card Mount Success on SPI 1");
+      sdfound = true;
+    }
+  }
+  if (sdfound == false) Serial.println("SD Card Mount Failed");
+
 
   //Initialise virtual PIO ports
-  Serial.println("Initialising Z80 Virtual PIO Ports");
+  Serial.println("Initialising Virtual PIO Ports");
   portOut(GPP, 0);        //Port 0 GPIO A 0 - 7 off
   portOut(GPP + 1, 255);  //Port 1 GPIO A 0 - 7 Outputs
   portOut(GPP + 2, 0);    //Port 0 GPIO B 1 - 7 off
   portOut(GPP + 3, 255);  //Port 1 GPIO B 0 - 7 Outputs
 
   //Initialise virtual 6850 UART
-  Serial.println("Initialising Z80 Virtual 6850 UART");
+  Serial.println("Initialising Virtual 6850 UART");
   pIn[UART_LSR] = 0x40;  //Set bit to say TX buffer is empty
 
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
@@ -106,7 +121,6 @@ void setup() {
 
   //Depending if swA is pressed run in breakpoint - prompt for settings
   if (digitalRead(swA) == 0) {
-
     BP = 0x0000;  //Set initial breakpoint
     BPmode = 0;   //Mode 0 is normal run mode
 
@@ -130,7 +144,6 @@ void setup() {
     Serial.println("Press button A to start");
     buttonA();
   }
-
 
 
   switch (BPmode) {
@@ -160,8 +173,8 @@ void setup() {
       SingleStep = false;
       break;
   }
-  
-  PC = 0;       //Set program counter
+
+  PC = 0;  //Set program counter
   RUN = true;
 }
 
@@ -182,8 +195,7 @@ void loop() {
   if (BPmode == 0 && digitalRead(swA) == 0) {  //Pressing button A will force a restart
     RUN = false;
     Serial.printf("\n\r\nCPU Halted @ %.4X ...rebooting...", PC - 1);
-    while (digitalRead(swA) == 0)
-      ;
+    buttonA();              //Wait for breakpoint button to be released
     portOut(GPP, 0);        //Port 0 GPIO A 0 - 7 off
     portOut(GPP + 1, 255);  //Port 1 GPIO A 0 - 7 Outputs
     portOut(GPP + 2, 0);    //Port 0 GPIO B 1 - 7 off
@@ -236,7 +248,9 @@ void loop() {
 //****                 Wait for button a to be pressed and released                        ****
 //*********************************************************************************************
 void buttonA(void) {
-  while (digitalRead(swA) == 1) delay(5);
+  if(digitalRead(swA) == 1){
+    while (digitalRead(swA) == 1) delay(5);
+  }
   while (digitalRead(swA) == 0) delay(5);
 }
 
@@ -266,6 +280,10 @@ void serialIO(void) {
     delay(100);
     serverClient.write(27);   //Print "esc"
     serverClient.print("c");  //Send esc c to reset screen
+
+    for(int i = 0; i <11; i++){
+      serverClient.println(logo[i]);
+    };
 
     while (serverClient.available()) serverClient.read();  //Get rid of any garbage received
     RUN = false;                                           //Force Z80 reboot

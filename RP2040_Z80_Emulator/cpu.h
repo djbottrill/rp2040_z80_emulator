@@ -1,3 +1,4 @@
+#include "globals.h"
 #pragma once
 
 uint8_t get8(void);
