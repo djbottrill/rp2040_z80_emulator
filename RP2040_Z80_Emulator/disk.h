@@ -9,6 +9,7 @@ void SDprintDir();
 bool SDsetPath();
 void bootstrap(void);
 void FileToRAM(char* , uint16_t);
+void outString(char[]);
 
 //*********************************************************************************************
 //****                       Load bootstrap binaries from flash                            ****
@@ -95,11 +96,17 @@ void bootstrap(void) {
 //*********************************************************************************************
 //****                             Print SD card directory                                 ****
 //*********************************************************************************************
-void SDprintDir() {                                     // Show files in /download
+void SDprintDir(void) {                                     // Show files in /download
+
+  char buf[80];
+
   File dir = SD.open(sddir, FILE_READ);
   dir.rewindDirectory();
   int cols = 0;
-  Serial.println(sddir);
+  //Serial.println(sddir);
+  sprintf(buf, "%s\n\r",sddir);
+  outString(buf);
+
   while (true) {
     File entry =  dir.openNextFile();
     if (! entry) {
@@ -107,22 +114,32 @@ void SDprintDir() {                                     // Show files in /downlo
       break;
     }
     String st = entry.name();
-    if (st.charAt(0) != '_') {                            // Skip deleted files
-      Serial.print(st);
-      if (st.length() < 8) Serial.print("\t");            // Extra tab if the filename is short
+    if (st.charAt(0) != '_' && st.charAt(0) != '.') {  // Skip deleted / hidden files;
+      //sprintf(buf, "%s", st);                           //Doesn't work !!
+      st.toCharArray(buf, st.length() + 1);               //But this does
+      outString(buf);
+
+      if (st.length() < 8) {
+        sprintf(buf, "\t");             // Extra tab if the filename is short
+        outString(buf);
+      }
       if (entry.isDirectory()) {
-        Serial.print("\t   DIR");
+        sprintf(buf, "\t   DIR");
+        outString(buf);
+
       } else {
         // files have sizes, directories do not
-        Serial.print("\t");
-        //Serial.print(entry.size(), DEC);
-        Serial.printf("%6d", entry.size());
+        sprintf(buf, "\t%6d", entry.size());
+        outString(buf);
+
       }
       cols++;
       if (cols < 3) {
-        Serial.print("\t");
+        sprintf(buf, "\t");
+        outString(buf);
       } else {
-        Serial.println();
+        sprintf(buf, "\n\r");
+        outString(buf);
         cols = 0;
       }
     }
@@ -131,6 +148,7 @@ void SDprintDir() {                                     // Show files in /downlo
   dir.close();
 }
 
+/*
 //*********************************************************************************************
 //****                                 Set SD card path                                    ****
 //*********************************************************************************************
@@ -158,6 +176,42 @@ bool  SDsetPath() {                      // Set SD Card path for file download
   Serial.println(sddir);
   return (true);
 }
+*/
+
+
+//*********************************************************************************************
+//****                                 Set SD card path                                    ****
+//*********************************************************************************************
+bool SDsetPath(void) {                   // Set SD Card path for file download
+  
+  char buf[80];
+
+  int a = pOut[DPARM + 1] << 8 | pOut[DPARM];  // Get buffer address as this contains the path
+  int l = RAM[a];                              // The first byte in the buffer contains the byte count
+  int i;
+  int j = 0;
+  char d[50] = {};
+  for (i = 1; i <= l; i++) {
+    d[j] = RAM[a + i];      // Read directory path
+    if (d[j] != 0x20) j++;  // Skip amy leading spaces
+  }
+
+  sprintf(buf, "New Path: %s\n\r",d);
+  outString(buf); 
+
+  File dir = SD.open(d, FILE_READ);  // Check if path is valid
+  if (!dir) {
+    sprintf(buf, "Invalid path\n\r");
+    outString(buf);
+
+    return (false);
+  }
+  dir.close();
+  for (i = 0; i < 50; i++) sddir[i] = d[i];  // Copy path to global variable
+  sprintf(buf, "Setting SD Card path to: %s\n\r", sddir);
+  outString(buf);
+  return (true);
+}
 
 //*********************************************************************************************
 //****                              Open file on SD card                                   ****
@@ -177,7 +231,6 @@ void SDfileOpen() {
   for (n = 0; n < 12; n++) sdfile[n + nn] = pOut[DPARM + n + 2];  // Append filename
   unsigned int blocks = 0;
   Serial.printf("open: %s ", sdfile);
-  //File f = SD.open(sdfile, FILE_READ);
   File f = SD.open(sdfile, FILE_READ);
   if (!f) {
     Serial.println("file open failed");
@@ -193,27 +246,33 @@ void SDfileOpen() {
   RAM[sdbuffer]     = blocks & 0xff;                  // Write the number of blocks to the buffer
 }
 
+
 //*********************************************************************************************
 //****           Read SD card file to Z80 memory for sdcopy.com                            ****
 //*********************************************************************************************
-bool SDfileRead() {                            // Read block from file command
-  int s = pOut[DPARM + 3] << 8 | pOut[DPARM + 2];         // Block Number
-  int a = pOut[DPARM + 1] << 8 | pOut[DPARM];             // Get buffer address
+bool SDfileRead(void) {                      // Read block from file command
+  
+  char buf[80];
+
+  int s = pOut[DPARM + 3] << 8 | pOut[DPARM + 2];  // Block Number
+  int a = pOut[DPARM + 1] << 8 | pOut[DPARM];      // Get buffer address
   digitalWrite(LED_BUILTIN, HIGH);
   dled = true;
   File f = SD.open(sdfile, FILE_READ);
   if (!f) {
-    Serial.println("file open failed");
+    sprintf(buf, "file open failed\n\r");
+    outString(buf);
+
     return (false);
   }
-  unsigned long fz = f.size();                            // Get file size
-  unsigned long fr = s * 128;                             // Calculate block start
-  f.seek(fr);                                             // Seek to first byte of block
-  for (int i = 0 ; i < 128 ; i++) {
+  unsigned long fz = f.size();  // Get file size
+  unsigned long fr = s * 128;   // Calculate block start
+  f.seek(fr);                   // Seek to first byte of block
+  for (int i = 0; i < 128; i++) {
     if (fr + i >= fz) {
-      RAM[a + i] = 0;                          // Pad out the last sector with zeros if past end of file
+      RAM[a + i] = 0;  // Pad out the last sector with zeros if past end of file
     } else {
-      RAM[a + i] = f.read();                   // Else read next byte from file
+      RAM[a + i] = f.read();  // Else read next byte from file
     }
   }
   f.close();
@@ -221,6 +280,7 @@ bool SDfileRead() {                            // Read block from file command
   dled = false;
   return (true);
 }
+
 
 //*********************************************************************************************
 //****                       Z80 Virtual disk write function                               ****
@@ -305,4 +365,18 @@ void FileToRAM(char c[], uint16_t l) {
   f.close();
   digitalWrite(LED_BUILTIN, LOW);
   dled = false;
+}
+
+
+//*********************************************************************************************
+//****     Print string to output buffer, will send to serial and telnet if connected      ****
+//*********************************************************************************************
+void outString(char buf[]) {
+  int i = 0;
+  while (buf[i] > 0) {
+    txBuf[txInPtr] = buf[i];  //Write char to output buffer
+    txInPtr++;
+    i++;
+    if (txInPtr == sizeof(txBuf)) txInPtr = 0;
+  }
 }

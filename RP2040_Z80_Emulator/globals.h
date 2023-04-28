@@ -1,5 +1,19 @@
 #pragma once
 
+const String banner[] = {           //Startup / logon banner
+  " PPPPPP   IIIIIII   CCCCCC    OOOOOO    888888    000000  ",
+  "P      P     I     C      C  O      O  8      8  0     00 ",
+  "P      P     I     C         O      O  8      8  0    0 0 ",
+  "PPPPPPP      I     C         O      O   888888   0   0  0 ",
+  "P            I     C         O      O  8      8  0  0   0 ",
+  "P            I     C      C  O      O  8      8  0 0    0 ",
+  "P         IIIIIII   CCCCCC    OOOOOO    888888    000000  ",
+  "                                                          ",
+  "               Z80 Emulator for RP2040 V2.2               ",
+  "      David Bottrill - Shady Grove Electronics 2023       ",
+  "                                                          "
+};
+
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
 #include <WiFi.h>
 #include <credentials.h>  //My WiFi credentials are in a custom Library
@@ -139,17 +153,5 @@ char sddir[50] = { "/download" };  //SD card path
 bool sdfound = false;              //SD Card present flag
 bool dled;                         //Disk activity flag
 
-String logo[] = {           //Startup / logon banner
-  " PPPPPP   IIIIIII   CCCCCC    OOOOOO    888888    000000  ",
-  "P      P     I     C      C  O      O  8      8  0     00 ",
-  "P      P     I     C         O      O  8      8  0    0 0 ",
-  "PPPPPPP      I     C         O      O   888888   0   0  0 ",
-  "P            I     C         O      O  8      8  0  0   0 ",
-  "P            I     C      C  O      O  8      8  0 0    0 ",
-  "P         IIIIIII   CCCCCC    OOOOOO    888888    000000  ",
-  "                                                          ",
-  "               Z80 Emulator for RP2040 V2.2               ",
-  "      David Bottrill - Shady Grove Electronics 2023       ",
-  "                                                          "
-};
+
 

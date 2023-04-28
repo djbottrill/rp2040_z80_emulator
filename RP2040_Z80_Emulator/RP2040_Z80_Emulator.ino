@@ -16,6 +16,7 @@
 #include "cpu.h"
 
 
+
 //*********************************************************************************************
 //****                     Setup for CPU supervisor runs on core 0                         ****
 //*********************************************************************************************
@@ -46,23 +47,10 @@ void setup() {
   Serial.println();
   Serial.write(27);   //Print "esc"
   Serial.print("c");  //Send esc c to reset screen
-  /*
-  Serial.println(" PPPPPP   IIIIIII   CCCCCC    OOOOOO    888888    000000  ");
-  Serial.println("P      P     I     C      C  O      O  8      8  0     00 ");
-  Serial.println("P      P     I     C         O      O  8      8  0    0 0 ");
-  Serial.println("PPPPPPP      I     C         O      O   888888   0   0  0 ");
-  Serial.println("P            I     C         O      O  8      8  0  0   0 ");
-  Serial.println("P            I     C      C  O      O  8      8  0 0    0 ");
-  Serial.println("P         IIIIIII   CCCCCC    OOOOOO    888888    000000  ");
-  Serial.println();
-  Serial.println("               Z80 Emulator for RP2040 V2.2 ");
-  Serial.println("      David Bottrill - Shady Grove Electronics 2023  ");
-  Serial.println();
-*/
 
 //Print the logon logo
   for(int i = 0; i <11; i++){
-    Serial.println(logo[i]);
+    Serial.println(banner[i]);
   };
 
   Serial.println("Initialising Virtual Disk Controller:");
@@ -282,7 +270,7 @@ void serialIO(void) {
     serverClient.print("c");  //Send esc c to reset screen
 
     for(int i = 0; i <11; i++){
-      serverClient.println(logo[i]);
+      serverClient.println(banner[i]);
     };
 
     while (serverClient.available()) serverClient.read();  //Get rid of any garbage received
@@ -409,3 +397,4 @@ void dumpReg(void) {
   Serial.printf("SP: %.4X  Top entry: %.4X\n\r", SP, (RAM[SP] + (256 * RAM[SP + 1])));
   Serial.printf("S:%1d  Z:%1d  H:%1d  P/V:%1d  N:%1d  C:%1d\n\r\n", Sf, Zf, Hf, Pf, Nf, Cf);
 }
+
