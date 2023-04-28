@@ -2,7 +2,7 @@ Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
 
 Update 28/04/23
 
-CPM SD coomands: sdfiles, sdpath and sdcopy now send serial output to telnet session.
+CPM SD commands: sdfiles, sdpath and sdcopy now send serial output to telnet session.
 Other minor tweaks.
 
 *************************
