@@ -1,4 +1,4 @@
-Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
+# Z80 Emulator for Raspberry Pi Pico and other RP2040 based MCU boards.
 
 Update 28/04/23
 
